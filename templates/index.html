@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>朋友圈文案生成器</title>
+  <style>
+    /* ── Reset & Variables ──────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:  #07c160;
+      --green2: #05a14e;
+      --bg:     #f0f2f5;
+      --card:   #ffffff;
+      --text:   #333333;
+      --muted:  #888888;
+      --border: #e8e8e8;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+                   "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 1px;
+    }
+    .header p {
+      margin-top: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ── Card ───────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      max-width: 680px;
+      margin: 0 auto 20px;
+    }
+
+    /* ── Section label ──────────────────────────────────────── */
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Pill-button group ──────────────────────────────────── */
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .pill {
+      padding: 7px 18px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all .2s;
+      user-select: none;
+    }
+    .pill:hover  { border-color: var(--green); color: var(--green); }
+    .pill.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ── Keyword input ──────────────────────────────────────── */
+    .input-wrap { margin-bottom: 24px; }
+    .input-wrap input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s;
+      font-family: inherit;
+    }
+    .input-wrap input:focus { border-color: var(--green); }
+    .input-wrap input::placeholder { color: #bbb; }
+
+    /* ── Generate button ────────────────────────────────────── */
+    .btn-generate {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: var(--green);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background .2s, transform .1s;
+    }
+    .btn-generate:hover   { background: var(--green2); }
+    .btn-generate:active  { transform: scale(.98); }
+    .btn-generate:disabled {
+      background: #b2dfca;
+      cursor: not-allowed;
+    }
+
+    /* ── Results ────────────────────────────────────────────── */
+    #results { max-width: 680px; margin: 0 auto; }
+
+    .result-item {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      animation: fadeIn .35s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-text {
+      flex: 1;
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-wrap: break-word;
+    }
+
+    .btn-copy {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1.5px solid var(--green);
+      background: transparent;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .btn-copy:hover   { background: var(--green); color: #fff; }
+    .btn-copy.copied  { background: var(--green); color: #fff; border-color: var(--green); }
+
+    /* ── Empty state ────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 40px 0;
+    }
+    .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>✦ 朋友圈文案生成器</h1>
+    <p>选好风格，一键生成高质量朋友圈文案</p>
+  </div>
+
+  <!-- ── Form card ───────────────────────────────────────────── -->
+  <div class="card">
+
+    <div class="section-title">选择分类</div>
+    <div class="pill-group" id="cat-group">
+      {% for cat in categories %}
+      <button class="pill {% if loop.first %}active{% endif %}"
+              data-group="cat" data-value="{{ cat }}">{{ cat }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="section-title">选择风格</div>
+    <div class="pill-group" id="mood-group">
+      {% for mood in moods %}
+      <button class="pill {% if loop.first %}active{% endif %}"
+              data-group="mood" data-value="{{ mood }}">{{ mood }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="section-title">关键词（可选）</div>
+    <div class="input-wrap">
+      <input type="text" id="keyword" maxlength="40"
+             placeholder="输入关键词让文案更贴近你，如：樱花、咖啡、加薪…" />
+    </div>
+
+    <button class="btn-generate" id="btn-gen" onclick="generate()">✨ 生成文案</button>
+  </div>
+
+  <!-- ── Results ─────────────────────────────────────────────── -->
+  <div id="results">
+    <div class="empty-state">
+      <div class="icon">📝</div>
+      <div>点击上方按钮，生成专属朋友圈文案</div>
+    </div>
+  </div>
+
+  <script>
+    // ── Active-pill selection ────────────────────────────────
+    document.querySelectorAll(".pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const group = btn.dataset.group;
+        document.querySelectorAll(`.pill[data-group="${group}"]`)
+          .forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    function getSelected(group) {
+      const el = document.querySelector(`.pill.active[data-group="${group}"]`);
+      return el ? el.dataset.value : "";
+    }
+
+    // ── Generate ─────────────────────────────────────────────
+    async function generate() {
+      const btn = document.getElementById("btn-gen");
+      btn.disabled = true;
+      btn.textContent = "生成中…";
+
+      const payload = {
+        category: getSelected("cat"),
+        mood:     getSelected("mood"),
+        keyword:  document.getElementById("keyword").value.trim(),
+        count:    5,
+      };
+
+      try {
+        const res  = await fetch("/generate", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload),
+        });
+        const data = await res.json();
+        renderResults(data.copies || []);
+      } catch (e) {
+        renderResults([]);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "✨ 生成文案";
+      }
+    }
+
+    // ── Render ───────────────────────────────────────────────
+    function renderResults(copies) {
+      const el = document.getElementById("results");
+      if (!copies.length) {
+        el.innerHTML = `<div class="empty-state">
+          <div class="icon">😕</div>
+          <div>没有生成结果，请稍后再试</div>
+        </div>`;
+        return;
+      }
+      el.innerHTML = copies.map((text, i) => `
+        <div class="result-item">
+          <span class="result-text">${escHtml(text)}</span>
+          <button class="btn-copy" onclick="copyText(this, ${i})">复制</button>
+        </div>
+      `).join("");
+
+      // Store raw copies for copy operation
+      window._copies = copies;
+    }
+
+    // ── Copy to clipboard ────────────────────────────────────
+    function copyText(btn, idx) {
+      const text = (window._copies || [])[idx] || "";
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "已复制 ✓";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = "复制";
+          btn.classList.remove("copied");
+        }, 2000);
+      }).catch(() => {
+      // Fallback for older browsers that don't support navigator.clipboard
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        btn.textContent = "已复制 ✓";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = "复制";
+          btn.classList.remove("copied");
+        }, 2000);
+      });
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
+              .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+  </script>
+</body>
+</html>
