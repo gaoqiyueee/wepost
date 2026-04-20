@@ -4,8 +4,9 @@ import { useState, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import type { Mode, BasicStyle, Role } from '@/lib/prompts'
 
-// canvas 仅客户端渲染
+// canvas 组件仅客户端渲染
 const AnnotationCanvas = dynamic(() => import('@/components/AnnotationCanvas'), { ssr: false })
+const PreviewCard = dynamic(() => import('@/components/PreviewCard'), { ssr: false })
 
 // ─── 常量 ────────────────────────────────────────────────────────────────────
 
@@ -331,30 +332,39 @@ export default function Home() {
 
         {/* 结果展示 */}
         {result && (
-          <section className="space-y-3">
+          <section className="space-y-4">
             <h2 className="font-semibold text-gray-700">🎉 生成结果</h2>
 
             {result.mode === 'era' ? (
               result.result.map((item, idx) => (
-                <ResultCard
-                  key={idx}
-                  label={item.era}
-                  content={item.content}
-                  idx={idx}
-                  copiedIdx={copiedIdx}
-                  onCopy={copyText}
-                />
+                <div key={idx} className="space-y-2">
+                  <PreviewCard
+                    mode="era"
+                    caption={item.content}
+                    eraLabel={item.era}
+                    imagePreview={imagePreview}
+                    index={idx}
+                  />
+                  <CopyBtn text={item.content} idx={idx} copiedIdx={copiedIdx} onCopy={copyText} />
+                </div>
               ))
             ) : (
               result.captions.map((caption, idx) => (
-                <ResultCard
-                  key={idx}
-                  label={`版本 ${idx + 1}`}
-                  content={caption}
-                  idx={idx}
-                  copiedIdx={copiedIdx}
-                  onCopy={copyText}
-                />
+                <div key={idx} className="space-y-2">
+                  <PreviewCard
+                    mode={result.mode}
+                    caption={caption}
+                    imagePreview={
+                      result.mode === 'academic' && annotatedImageBase64
+                        ? `data:image/jpeg;base64,${annotatedImageBase64}`
+                        : imagePreview
+                    }
+                    index={idx}
+                    styleName={mode === 'basic' ? style : undefined}
+                    roleName={mode === 'role' ? role : undefined}
+                  />
+                  <CopyBtn text={caption} idx={idx} copiedIdx={copiedIdx} onCopy={copyText} />
+                </div>
               ))
             )}
           </section>
@@ -364,35 +374,17 @@ export default function Home() {
   )
 }
 
-// ─── 结果卡片子组件 ───────────────────────────────────────────────────────────
+// ─── 复制按钮 ─────────────────────────────────────────────────────────────────
 
-function ResultCard({
-  label,
-  content,
-  idx,
-  copiedIdx,
-  onCopy,
-}: {
-  label: string
-  content: string
-  idx: number
-  copiedIdx: number | null
-  onCopy: (text: string, idx: number) => void
-}) {
+function CopyBtn({
+  text, idx, copiedIdx, onCopy,
+}: { text: string; idx: number; copiedIdx: number | null; onCopy: (t: string, i: number) => void }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-50">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
-          {label}
-        </span>
-        <button
-          onClick={() => onCopy(content, idx)}
-          className="text-xs text-gray-400 hover:text-purple-500 transition flex items-center gap-1"
-        >
-          {copiedIdx === idx ? '✓ 已复制' : '复制'}
-        </button>
-      </div>
-      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{content}</p>
-    </div>
+    <button
+      onClick={() => onCopy(text, idx)}
+      className="text-xs text-gray-400 hover:text-purple-500 transition flex items-center gap-1"
+    >
+      {copiedIdx === idx ? '✓ 已复制文案' : '复制文案'}
+    </button>
   )
 }
