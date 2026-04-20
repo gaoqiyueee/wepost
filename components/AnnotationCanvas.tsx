@@ -35,12 +35,14 @@ export default function AnnotationCanvas({ imagePreview, onAnnotatedImage }: Pro
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
-      const draw = (a: Annotation, lineWidth = 3) => {
+      const draw = (a: Annotation, lineWidth = 2) => {
         ctx.strokeStyle = a.color
         ctx.lineWidth = lineWidth
+        ctx.setLineDash([6, 3])
         ctx.strokeRect(a.x, a.y, a.w, a.h)
+        ctx.setLineDash([])
         // 半透明填充
-        ctx.fillStyle = a.color + '22'
+        ctx.fillStyle = a.color + '18'
         ctx.fillRect(a.x, a.y, a.w, a.h)
       }
 
